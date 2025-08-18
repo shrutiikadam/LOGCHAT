@@ -13,6 +13,36 @@ export default function Home() {
 
   const handleFileChange = (e) => setFile(e.target.files[0]);
 
+  const exportReport = async () => {
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/export_report",
+      {
+        filename: file ? file.name.split(".")[0] : "logfile",
+        logs: logs,
+        chat: chat
+      },
+      { responseType: "blob" }
+    );
+
+    // download PDF
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `${file ? file.name.split(".")[0] : "logfile"}_report.pdf`
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (err) {
+    alert("Failed to export report");
+    console.error(err);
+  }
+};
+
+
   const handleUpload = async () => {
     if (!file) return alert("Upload a log file first.");
     const formData = new FormData();
@@ -62,7 +92,7 @@ export default function Home() {
     if (Array.isArray(val)) return val;
     return [val];
   };
-
+  
   return (
     <div className="home-app-container">
       <div className="home-two-column">
@@ -182,6 +212,9 @@ export default function Home() {
               {loadingQa ? "..." : "Send"}
             </button>
           </div>
+          <button onClick={exportReport} className="home-btn home-btn-red">
+          📄 Export Report
+        </button>
         </div>
       </div>
     </div>

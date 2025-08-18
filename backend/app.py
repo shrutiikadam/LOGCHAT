@@ -11,6 +11,11 @@ from log_parser import parse_log_line
 from rag.ingest import ingest_parsed_logs
 from rag.retrieval import answer_question
 
+from flask import send_file
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem
+from reportlab.lib.styles import getSampleStyleSheet
+import io
 # --- NLTK setup (safe) ---
 try:
     nltk.data.find('tokenizers/punkt')
@@ -134,6 +139,70 @@ def query():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/export_report", methods=["POST"])
+def export_report():
+    try:
+        data = request.get_json()
+        filename = data.get("filename", "report")
+        logs = data.get("logs", {})
+        chat = data.get("chat", [])
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Title
+        elements.append(Paragraph(f"{filename} - Incident Report", styles['Title']))
+        elements.append(Spacer(1, 12))
+
+        # --- Summary Section ---
+        if logs:
+            elements.append(Paragraph("System Summary", styles['Heading1']))
+            if logs.get("summary"):
+                elements.append(Paragraph(logs["summary"], styles['Normal']))
+                elements.append(Spacer(1, 12))
+
+            for section in ["findings", "anomalies", "suspicious", "insights", "recommendations"]:
+                items = logs.get(section, [])
+                if items:
+                    elements.append(Paragraph(section.capitalize(), styles['Heading2']))
+                    list_items = [ListItem(Paragraph(str(i), styles['Normal'])) for i in items]
+                    elements.append(ListFlowable(list_items, bulletType="bullet"))
+                    elements.append(Spacer(1, 12))
+
+        # --- Chat Section ---
+        if chat:
+            elements.append(Paragraph("Q&A Section", styles['Heading1']))
+            for c in chat:
+                q = c.get("question") or c.get("text")
+                a = c.get("answer") or c.get("text")
+                if c.get("sender") == "user":
+                    elements.append(Paragraph(f"Q: {q}", styles['Heading2']))
+                else:
+                    elements.append(Paragraph(f"A: {a}", styles['Normal']))
+                    if c.get("full"):
+                        for sec in ["findings", "recommendations"]:
+                            items = c["full"].get(sec, [])
+                            if items:
+                                elements.append(Paragraph(sec.capitalize(), styles['Heading3']))
+                                list_items = [ListItem(Paragraph(str(i), styles['Normal'])) for i in items]
+                                elements.append(ListFlowable(list_items, bulletType="bullet"))
+                elements.append(Spacer(1, 10))
+
+        doc.build(elements)
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"{filename}_report.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
     # Use a fixed port for convenience
     app.run(debug=True, port=5000)

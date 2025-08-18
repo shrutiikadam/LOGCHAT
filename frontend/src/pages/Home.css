@@ -55,11 +55,25 @@
 /* BUTTONS */
 .home-btn {
   padding: 10px 16px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
   border: none;
-  transition: 0.3s ease;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+/* Red variant */
+.home-btn-red {
+  background-color: #007bff;
+  color: white;
+  border: 1px solid #0056b3;
+  margin: 10px;
+}
+
+.home-btn-red:hover {
+  background-color: #1860ad;
+  border-color: #ac2925;
 }
 
 .home-btn-green {
