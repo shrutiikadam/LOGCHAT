@@ -36,7 +36,7 @@ The system uses **Flask (Python)** for the backend and **React** for the fronten
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/logchat.git
+git clone https://github.com/shrutiikadam/LOGCHAT.git
 cd logchat
 ``` 
 2. Backend Setup (Flask + LangChain)
